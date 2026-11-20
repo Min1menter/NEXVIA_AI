@@ -1,0 +1,10 @@
+# Used inside Docker/Kubernetes: Redis online store, shared volumes for registry and data.
+project: fraudshield
+provider: local
+registry: /app/artifacts/registry.db
+online_store:
+  type: redis
+  connection_string: "redis:6379"
+offline_store:
+  type: file
+entity_key_serialization_version: 3
