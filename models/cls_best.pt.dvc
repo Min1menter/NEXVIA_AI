@@ -1,0 +1,5 @@
+outs:
+- md5: 609b00bacee35545fae3dafba82762b9
+  size: 28437626
+  hash: md5
+  path: cls_best.pt

@@ -1,0 +1,5 @@
+outs:
+- md5: bc91a287fff1c4061c16a23690e9e11a
+  size: 19297993
+  hash: md5
+  path: seg_unet.pt

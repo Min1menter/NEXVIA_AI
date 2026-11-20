@@ -1,0 +1,6 @@
+outs:
+- md5: ca0107a5151afe4efca373e7bd07b742.dir
+  size: 68297680
+  nfiles: 130
+  hash: md5
+  path: dicom_ct

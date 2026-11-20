@@ -1,0 +1,6 @@
+[cache]
+    type = "reflink,hardlink,copy"
+[core]
+    remote = storage
+['remote "storage"']
+    url = ../../dvc-remote
