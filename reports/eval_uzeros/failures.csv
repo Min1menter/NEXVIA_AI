@@ -1,0 +1,11 @@
+type,path,prob
+FP,CheXpert-v1.0-small/valid/patient64624/study1/view1_frontal.jpg,0.8879841
+FP,CheXpert-v1.0-small/valid/patient64697/study1/view1_frontal.jpg,0.82290184
+FP,CheXpert-v1.0-small/valid/patient64608/study1/view1_frontal.jpg,0.7177049
+FP,CheXpert-v1.0-small/valid/patient64569/study1/view1_frontal.jpg,0.6719013
+FP,CheXpert-v1.0-small/valid/patient64656/study1/view1_frontal.jpg,0.61352605
+FN,CheXpert-v1.0-small/valid/patient64691/study1/view1_frontal.jpg,0.11536141
+FN,CheXpert-v1.0-small/valid/patient64612/study1/view1_frontal.jpg,0.12199923
+FN,CheXpert-v1.0-small/valid/patient64631/study1/view1_frontal.jpg,0.14342748
+FN,CheXpert-v1.0-small/valid/patient64652/study1/view1_frontal.jpg,0.14596547
+FN,CheXpert-v1.0-small/valid/patient64694/study1/view1_frontal.jpg,0.16013464
