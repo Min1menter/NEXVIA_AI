@@ -1,0 +1,42 @@
+:root { --bg:#0f1318; --panel:#171d25; --line:#2a3340; --text:#e6ebf2; --muted:#8c98a8; --accent:#4c9aff; --ok:#2ea36b; --bad:#d64545; --warn:#f5b301; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui, sans-serif; }
+.app { min-height:100vh; display:flex; flex-direction:column; }
+.banner { background:var(--warn); color:#222; text-align:center; font-weight:700; padding:6px 10px; }
+.topbar { display:flex; align-items:center; gap:16px; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+.topbar nav { flex:1; display:flex; gap:6px; }
+.tab { background:none; border:0; color:var(--muted); padding:6px 10px; cursor:pointer; border-bottom:2px solid transparent; }
+.tab.active { color:var(--text); border-color:var(--accent); }
+.layout { flex:1; display:grid; grid-template-columns:320px 1fr; min-height:0; }
+.list { border-right:1px solid var(--line); overflow:auto; max-height:calc(100vh - 100px); }
+.item { display:block; width:100%; text-align:left; background:none; color:inherit; border:0; border-bottom:1px solid var(--line); padding:10px 14px; cursor:pointer; }
+.item:hover, .item.sel { background:var(--panel); }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.title { font-weight:600; margin:4px 0 2px; }
+.chip { background:var(--line); border-radius:4px; padding:1px 6px; font-size:12px; }
+.badge { border-radius:10px; padding:1px 8px; font-size:12px; background:var(--line); }
+.badge.approved { background:var(--ok); } .badge.rejected, .badge.error { background:var(--bad); } .badge.pending_review { background:#5a6575; }
+.badge.big { display:inline-block; padding:4px 12px; font-size:14px; }
+.pane { padding:16px; overflow:auto; }
+.viewer { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; }
+.imgwrap { position:relative; background:#000; border-radius:6px; overflow:hidden; align-self:start; }
+.imgwrap img { display:block; width:100%; }
+.imgwrap .ovl { position:absolute; inset:0; height:100%; object-fit:fill; pointer-events:none; }
+.wm { position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.6); color:var(--warn); padding:2px 8px; font-size:11px; font-weight:700; border-radius:3px; }
+.side h3 { margin:0 0 8px; }
+.bar { height:8px; background:var(--line); border-radius:4px; margin:4px 0; } .bar div { height:100%; background:var(--accent); border-radius:4px; }
+.controls { display:flex; flex-direction:column; gap:8px; margin:14px 0; padding:10px; background:var(--panel); border-radius:6px; }
+.scores { width:100%; border-collapse:collapse; margin:10px 0; } .scores td { padding:3px 0; border-bottom:1px solid var(--line); } .scores td:last-child { text-align:right; }
+.decision { margin-top:16px; } .buttons { display:flex; gap:8px; }
+button { background:var(--accent); color:#fff; border:0; border-radius:5px; padding:8px 14px; cursor:pointer; font:inherit; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+button.approve { background:var(--ok); } button.reject { background:var(--bad); } button.ghost { background:none; border:1px solid var(--line); color:var(--muted); }
+textarea, input, select { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:7px; font:inherit; margin-bottom:8px; }
+input[type=checkbox], input[type=range] { width:auto; margin:0 6px 0 0; } input[type=range] { width:60%; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px; }
+.login { max-width:340px; margin:80px auto; display:flex; flex-direction:column; gap:6px; }
+.audit { padding:16px; } .log { width:100%; border-collapse:collapse; font-size:13px; } .log th, .log td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+.mono { font-family:ui-monospace, monospace; }
+.muted { color:var(--muted); } .small { font-size:12px; } .pad { padding:14px; }
+.error { color:#ff7b7b; } .ok { color:#5fd49a; }
+@media (max-width: 900px) { .layout, .viewer { grid-template-columns:1fr; } .list { max-height:240px; border-right:0; } }
