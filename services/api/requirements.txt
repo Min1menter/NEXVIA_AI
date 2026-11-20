@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn[standard]
+python-multipart
+psycopg2-binary
+PyJWT>=2.8
+bcrypt>=4.1
+requests
+pydantic>=2

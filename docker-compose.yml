@@ -1,0 +1,94 @@
+# EDUCATION ONLY - not for clinical use.   docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: medai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medai -d medai"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  orthanc:
+    image: orthancteam/orthanc@sha256:d2705f2c56547e55ce9bc2250fd22d05d326493b3f3d9fa191ecb7db8ca6b5a2
+    environment:
+      ORTHANC__NAME: "MedImaging-AI"
+      ORTHANC__AUTHENTICATION_ENABLED: "true"
+      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_USER:-orthanc}": "${ORTHANC_PASSWORD:?set ORTHANC_PASSWORD in .env}"}'
+      ORTHANC__REMOTE_ACCESS_ALLOWED: "true"
+      ORTHANC__STABLE_AGE: "5"
+      ORTHANC__OVERWRITE_INSTANCES: "true"
+    ports:                       # localhost only; put a TLS reverse proxy in front for anything else
+      - "127.0.0.1:8042:8042"    # REST / Orthanc Explorer
+      - "127.0.0.1:4242:4242"    # DICOM
+    volumes:
+      - orthanc-db:/var/lib/orthanc/db
+    restart: unless-stopped
+
+  inference:
+    build:
+      context: .
+      dockerfile: services/inference/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://medai:${POSTGRES_PASSWORD}@db:5432/medai
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USER: ${ORTHANC_USER:-orthanc}
+      ORTHANC_PASSWORD: ${ORTHANC_PASSWORD}
+      MODEL_DIR: /models
+      RESULTS_DIR: /results
+      POLL_SECONDS: "3"
+    volumes:
+      - ./models:/models:ro      # put cls_best.pt (and optionally seg_unet.pt) here
+      - results:/results
+    depends_on:
+      db: {condition: service_healthy}
+      orthanc: {condition: service_started}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://medai:${POSTGRES_PASSWORD}@db:5432/medai
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USER: ${ORTHANC_USER:-orthanc}
+      ORTHANC_PASSWORD: ${ORTHANC_PASSWORD}
+      RESULTS_DIR: /results
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (openssl rand -hex 32)}
+      RADIOLOGIST_USER: ${RADIOLOGIST_USER:-radiologist}
+      RADIOLOGIST_PASSWORD: ${RADIOLOGIST_PASSWORD:?set RADIOLOGIST_PASSWORD in .env}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+    volumes:
+      - results:/results:ro
+    depends_on:
+      db: {condition: service_healthy}
+    expose: ["8000"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  viewer:
+    build: ./viewer
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on: [api]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  orthanc-db:
+  results:
