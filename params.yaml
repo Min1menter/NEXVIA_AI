@@ -1,0 +1,45 @@
+seed: 42
+data:
+  source: synthetic            # synthetic | ieee | paysim
+  synthetic: {n_users: 5000, n_txn: 200000, fraud_rate: 0.008, n_rings: 25, days: 60}
+  ieee: {transaction_csv: data/raw/train_transaction.csv, identity_csv: data/raw/train_identity.csv}
+  paysim: {csv: data/raw/PS_20174392719_1491204439457_log.csv}
+  train_frac: 0.6
+  val_frac: 0.2                # remaining 20% = test period, replayed through Kafka
+features:
+  tau_short_s: 3600            # decay constant for "velocity_short" (1h)
+  tau_long_s: 86400            # decay constant for "velocity_long" (24h)
+xgb:
+  n_estimators: 600
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  early_stopping_rounds: 40
+  imbalance: class_weight      # class_weight | smote
+gnn:
+  hidden: 64
+  layers: 2
+  epochs: 200
+  lr: 0.01
+  dropout: 0.3
+  patience: 30
+  hub_limit: 200               # drop device/card/counterparty keys shared by more than this many users
+blend:
+  alpha_step: 0.05
+  bootstrap: 200               # user-level bootstrap resamples for the PR-AUC gain CI
+  stack: {Cs: [0.1, 1.0, 10.0], folds: 5, min_gain: 0.01}   # stack replaces weighted blend only if val OOF PR-AUC is >= 0.01 better
+  review_cost: 5.0             # cost of an analyst reviewing one alert (currency units)
+rules:
+  ato_amount_ratio: 8.0        # amount_vs_avg >= this AND device change AND country change => force alert
+drift:
+  psi_threshold: 0.2
+  share_drifted_threshold: 0.3
+  min_rows: 500
+  window_rows: 5000
+  min_reviewed: 30
+  min_alert_precision: 0.25
+kafka:
+  topic_in: transactions
+  topic_out: fraud-scores
+  topic_dlq: transactions-dlq

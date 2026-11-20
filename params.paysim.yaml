@@ -1,0 +1,6 @@
+# PaySim (Kaggle dataset ealaxi/paysim1). 6.3M rows -> first 500k in time order (this slice has only ~0.047% fraud, ~233 cases; raise max_rows for more cases). Use:  FRAUD_PARAMS=params.paysim.yaml
+data:
+  source: paysim
+  paysim: {csv: /kaggle/input/paysim1/PS_20174392719_1491204439457_log.csv, max_rows: 500000}
+gnn: {epochs: 60}
+blend: {review_cost: 500.0}

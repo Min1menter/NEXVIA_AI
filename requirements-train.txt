@@ -1,0 +1,9 @@
+-r requirements-serve.txt
+torch>=2.2
+torch_geometric>=2.5
+mlflow>=2.10
+evidently>=0.4.30,<0.5
+imbalanced-learn>=0.12
+matplotlib
+pytest
+httpx

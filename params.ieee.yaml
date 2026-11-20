@@ -1,0 +1,8 @@
+# IEEE-CIS Fraud Detection (Kaggle competition). Use:  FRAUD_PARAMS=params.ieee.yaml
+data:
+  source: ieee
+  ieee:
+    transaction_csv: /kaggle/input/ieee-fraud-detection/train_transaction.csv
+    identity_csv: /kaggle/input/ieee-fraud-detection/train_identity.csv
+gnn: {epochs: 150}
+blend: {review_cost: 20.0}
