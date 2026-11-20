@@ -1,0 +1,15 @@
+# Training / evaluation environment (the services have their own requirements files)
+torch
+torchvision
+monai[nibabel]>=1.3
+pydicom>=2.4
+nibabel
+numpy
+pandas
+Pillow
+scikit-learn
+matplotlib
+tqdm
+pyyaml
+dvc
+pytest

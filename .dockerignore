@@ -1,0 +1,9 @@
+.git
+data
+runs
+reports
+viewer/node_modules
+viewer/dist
+**/__pycache__
+*.pt
+.env

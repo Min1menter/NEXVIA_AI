@@ -1,0 +1,26 @@
+# secrets and local config
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# python / node
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+
+# data and run outputs (DVC tracks what must be versioned)
+/data/raw/
+/runs/
+*.pt
+
+# logs and recordings (put videos in the Drive folder, not in Git)
+*.log
+*.mp4
+*.mkv
+
+# DVC writes its own ignore files for what it tracks (data/dicom, data/dicom_ct, ...)

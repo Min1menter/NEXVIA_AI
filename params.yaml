@@ -1,0 +1,36 @@
+train_cls:
+  root: data/raw
+  dataset_dir: CheXpert-v1.0-small
+  out: runs/cls
+  epochs: 8
+  freeze_epochs: 1
+  batch_size: 32
+  lr: 0.0001
+  img_size: 224
+  uncertain: ones
+  frontal_only: true
+  max_samples: null
+  workers: 4
+  seed: 42
+
+train_seg:
+  root: data/raw/msd
+  task: Task09_Spleen
+  out: runs/seg
+  epochs: 100
+  batch_size: 2
+  lr: 0.0001
+  roi: [96, 96, 96]
+  cache_rate: 0.5
+  val_every: 2
+  workers: 4
+  seed: 42
+
+evaluate:
+  root: data/raw
+  dataset_dir: CheXpert-v1.0-small
+  ckpt: runs/cls/best.pt
+  out: reports/eval
+  bootstrap: 1000
+  failure_label: Pleural Effusion
+  workers: 4
