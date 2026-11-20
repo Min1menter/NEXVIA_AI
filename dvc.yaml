@@ -1,0 +1,47 @@
+# data/raw is tracked with `dvc add data/raw` (see README), not as a stage.
+stages:
+  train_cls:
+    cmd: python -m src.train_cls
+    deps:
+      - src/train_cls.py
+      - src/data/datasets.py
+      - src/models/densenet_cls.py
+      - data/raw/CheXpert-v1.0-small
+    params:
+      - train_cls
+    outs:
+      - runs/cls/best.pt
+    metrics:
+      - runs/cls/metrics.json:
+          cache: false
+
+  train_seg:
+    cmd: python -m src.train_seg
+    deps:
+      - src/train_seg.py
+      - src/data/msd.py
+      - src/models/unet3d_monai.py
+    params:
+      - train_seg
+    outs:
+      - runs/seg/best.pt
+    metrics:
+      - runs/seg/metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - runs/cls/best.pt
+      - data/raw/CheXpert-v1.0-small
+    params:
+      - evaluate
+    outs:
+      - reports/eval/calibration.png
+      - reports/eval/subgroups.csv
+      - reports/eval/failures.png
+      - reports/eval/failures.csv
+    metrics:
+      - reports/eval/metrics.json:
+          cache: false
