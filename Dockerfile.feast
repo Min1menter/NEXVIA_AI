@@ -1,0 +1,16 @@
+# Serving image WITH Feast + Redis support. Uses `uv` (fast, fails fast with a clear message if packages conflict)
+# instead of pip, whose resolver can spend an hour backtracking.
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 UV_NO_CACHE=1 DATA_DIR=/app/data ARTIFACTS_DIR=/app/artifacts REPORTS_DIR=/app/reports \
+    FEATURE_BACKEND=feast FEAST_REPO=/app/feature_repo
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/* && pip install uv
+COPY requirements-serve-lite.txt .
+RUN uv pip install --system -r requirements-serve-lite.txt "feast[redis]>=0.40,<0.50"
+COPY pyproject.toml params.yaml ./
+COPY src ./src
+COPY feature_repo ./feature_repo
+COPY feature_repo/feature_store.docker.yaml ./feature_repo/feature_store.yaml
+RUN uv pip install --system -e . --no-deps && mkdir -p data artifacts reports
+EXPOSE 8000
+CMD ["uvicorn", "fraudshield.api:create_default", "--factory", "--host", "0.0.0.0", "--port", "8000"]

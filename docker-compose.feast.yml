@@ -1,0 +1,25 @@
+# Add-on to docker-compose.demo.yml:  docker compose -f docker-compose.demo.yml -f docker-compose.feast.yml up -d --build
+# Adds: Redis (Feast online store), a one-shot `feast-init` job (feast apply + materialize), the API/consumer switched to Feast, and the MLflow UI.
+services:
+  redis:
+    image: redis:7-alpine
+  feast-init:
+    build: {context: ., dockerfile: Dockerfile.feast}
+    command: ["sh", "-c", "cd /app/feature_repo && feast apply && cd /app && python -m fraudshield.store materialize"]
+    environment: {FEATURE_BACKEND: feast}
+    volumes: ["./demo/data:/app/data", "./demo/artifacts:/app/artifacts"]
+    depends_on: [redis]
+    restart: "no"
+  api:
+    build: {context: ., dockerfile: Dockerfile.feast}
+    environment: {FEATURE_BACKEND: feast}
+    depends_on: {feast-init: {condition: service_completed_successfully}}
+  consumer:
+    build: {context: ., dockerfile: Dockerfile.feast}
+    environment: {FEATURE_BACKEND: feast}
+    depends_on: {feast-init: {condition: service_completed_successfully}}
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    volumes: ["./demo/mlflow.db:/mlflow/mlflow.db"]
+    ports: ["5000:5000"]

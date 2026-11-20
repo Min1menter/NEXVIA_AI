@@ -1,0 +1,57 @@
+# Light demo stack: Kafka + Postgres + API + consumer + producer + Streamlit dashboard.
+# Needs ./demo/data and ./demo/artifacts copied from your Kaggle run (see docs/DEMO_QUICKSTART.md).
+x-env: &env
+  KAFKA_BOOTSTRAP: kafka:9092
+  DATABASE_URL: postgresql+psycopg2://fraud:fraud@postgres:5432/fraud
+  API_KEY: demo-key
+x-vols: &vols
+  - ./demo/data:/app/data
+  - ./demo/artifacts:/app/artifacts
+  - ./demo/reports:/app/reports
+services:
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 3
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_USER: fraud, POSTGRES_PASSWORD: fraud, POSTGRES_DB: fraud}
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U fraud"], interval: 5s, retries: 12}
+  api:
+    build: {context: ., dockerfile: Dockerfile.lite}
+    environment: *env
+    volumes: *vols
+    ports: ["8000:8000"]
+    depends_on: {postgres: {condition: service_healthy}}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      retries: 20
+  consumer:
+    build: {context: ., dockerfile: Dockerfile.lite}
+    command: python -m fraudshield.consumer
+    environment: *env
+    volumes: *vols
+    depends_on: {api: {condition: service_healthy}, kafka: {condition: service_started}}
+  producer:
+    profiles: [replay]
+    build: {context: ., dockerfile: Dockerfile.lite}
+    command: python -m fraudshield.producer --speed 20000 --limit 5000
+    environment: *env
+    volumes: *vols
+    depends_on: [kafka]
+  dashboard:
+    build: {context: ., target: dashboard}
+    environment: {API_URL: "http://api:8000", API_KEY: demo-key}
+    ports: ["8501:8501"]
+    depends_on: [api]

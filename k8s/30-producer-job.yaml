@@ -1,0 +1,17 @@
+# kubectl apply -f k8s/30-producer-job.yaml   (re-create to replay again: kubectl -n fraudshield delete job producer)
+apiVersion: batch/v1
+kind: Job
+metadata: {name: producer, namespace: fraudshield}
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      containers:
+        - name: producer
+          image: fraudshield-serve:latest
+          imagePullPolicy: Never
+          command: ["python", "-m", "fraudshield.producer", "--speed", "3600", "--limit", "20000"]
+          envFrom: [{configMapRef: {name: fraud-config}}]
+          volumeMounts: [{name: data, mountPath: /app/data}]
+      volumes: [{name: data, persistentVolumeClaim: {claimName: fraud-data}}]

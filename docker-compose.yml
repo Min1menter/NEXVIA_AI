@@ -1,0 +1,67 @@
+# Full stack:  docker compose --profile pipeline run --rm pipeline   (once: data+features+train)
+#              docker compose up -d --build
+#              docker compose run --rm producer
+x-env: &env
+  FEATURE_BACKEND: feast
+  KAFKA_BOOTSTRAP: kafka:9092
+  DATABASE_URL: postgresql+psycopg2://fraud:${POSTGRES_PASSWORD:-fraud}@postgres:5432/fraud
+  API_KEY: ${API_KEY:-dev-key}
+  MLFLOW_TRACKING_URI: http://mlflow:5000
+services:
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 3
+  redis:
+    image: redis:7-alpine
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_USER: fraud, POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-fraud}", POSTGRES_DB: fraud}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U fraud"], interval: 5s, retries: 10}
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    volumes: [mlflow:/mlflow]
+    ports: ["5000:5000"]
+  pipeline:
+    profiles: [pipeline]
+    build: {context: ., target: train}
+    environment: *env
+    volumes: [data:/app/data, artifacts:/app/artifacts, reports:/app/reports]
+    depends_on: [redis, mlflow]
+  api:
+    build: {context: ., target: serve}
+    environment: *env
+    volumes: [data:/app/data, artifacts:/app/artifacts, reports:/app/reports]
+    ports: ["8000:8000"]
+    depends_on: {postgres: {condition: service_healthy}, redis: {condition: service_started}}
+  consumer:
+    build: {context: ., target: serve}
+    command: python -m fraudshield.consumer
+    environment: *env
+    volumes: [data:/app/data, artifacts:/app/artifacts]
+    depends_on: [kafka, postgres, redis]
+  producer:
+    profiles: [replay]
+    build: {context: ., target: serve}
+    command: python -m fraudshield.producer --speed 3600 --limit 20000
+    environment: *env
+    volumes: [data:/app/data]
+    depends_on: [kafka]
+  dashboard:
+    build: {context: ., target: dashboard}
+    environment: {API_URL: "http://api:8000", API_KEY: "${API_KEY:-dev-key}"}
+    ports: ["8501:8501"]
+    depends_on: [api]
+volumes: {pgdata: {}, mlflow: {}, data: {}, artifacts: {}, reports: {}}

@@ -1,0 +1,12 @@
+# Lightweight image for the Kafka + API + consumer demo. Uses the in-memory state store and the models/data trained on Kaggle.
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 DATA_DIR=/app/data ARTIFACTS_DIR=/app/artifacts REPORTS_DIR=/app/reports FEATURE_BACKEND=memory
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+COPY requirements-serve-lite.txt .
+RUN pip install -r requirements-serve-lite.txt
+COPY pyproject.toml params.yaml ./
+COPY src ./src
+RUN pip install -e . --no-deps && mkdir -p data artifacts reports
+EXPOSE 8000
+CMD ["uvicorn", "fraudshield.api:create_default", "--factory", "--host", "0.0.0.0", "--port", "8000"]
