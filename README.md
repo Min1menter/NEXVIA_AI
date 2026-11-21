@@ -53,27 +53,39 @@ python -m src.train_seg          # -> runs/seg/best.pt, metrics.json
 CheXpert-small from Stanford AIMI (an unofficial Kaggle mirror was used here), MSD from medicaldecathlon.com / MONAI.
 
 ## Data and weights with DVC
-Small, redistributable artefacts are versioned with DVC: the demo DICOMs (`data/dicom`, `data/dicom_ct`) and the weights
-(`models/cls_best.pt`, `models/seg_unet.pt`). They are **not** stored in Git; Git holds only the small `.dvc` pointer files.
-The DVC remote is a plain folder named `dvc-remote` that must sit **next to** the repo folder:
-```
-some-folder/
-  dvc-remote/        <- unzip dvc-remote.zip here (from the latest GitHub Release, or the Drive folder)
-  medimaging-ai/     <- this repository
-```
+Git holds only small `.dvc` pointer files; the public data objects are hosted on the data-only `medimaging-ai-dvc-data` branch of this same repository.
+
+| Artefact | DVC target | Availability |
+|---|---|---|
+| Classifier weights | `models/cls_best.pt.dvc` | Public |
+| Segmentation weights | `models/seg_unet.pt.dvc` | Public |
+| Spleen CT demo series (130 DICOM slices; derived from MSD, CC-BY-SA 4.0) | `data/dicom_ct.dvc` | Public |
+| Chest X-ray demo DICOMs (derived from CheXpert) | `data/dicom.dvc` | Not included in the public data branch; redistribution restrictions apply |
+
+### Download the public assets
+
+After cloning the code, configure the public HTTP DVC remote and pull only the three public targets. This setup was tested from a clean clone with an empty DVC cache.
+
+
 ```bash
 pip install dvc
-dvc pull            # restores data/dicom*, models/*.pt (remote is configured as ../dvc-remote)
+dvc remote add public_http https://raw.githubusercontent.com/Min1menter/NEXVIA_AI/medimaging-ai-dvc-data
+dvc remote default public_http
+ dvc pull data/dicom_ct.dvc models/cls_best.pt.dvc models/seg_unet.pt.dvc
 ```
-`dvc status -c` should report the cache and remote as in sync. It may also warn that outputs of the `train_cls`, `train_seg` and `evaluate` stages are
-"missing version info": those stages were executed on a Kaggle GPU, so their outputs are committed as plain files in `reports/` (and the weights are tracked
-as `models/*.pt`) rather than produced by `dvc repro` on this machine.
+
+The pull restores the 130 CT DICOM slices and both model weights. Do not run plain `dvc pull` for this public setup: the repository also contains DVC pointers for restricted chest X-ray files and training/evaluation outputs that are not part of the public data branch.
+
+
+The full datasets are not redistributed (their licences apply): CheXpert-small from Stanford AIMI (an unofficial Kaggle mirror was used here), MSD from medicaldecathlon.com / MONAI. `dvc repro` re-runs training/evaluation stages and requires the full datasets plus a GPU; it is not needed to download the demo assets.
+
 
 ## Run the platform
 ```bash
 cp .env.example .env     # fill every blank (see comments); Windows: copy .env.example .env
 docker compose up --build
-python scripts/upload_dicom.py data/dicom    --password "<ORTHANC_PASSWORD>"   # 48 chest X-ray studies
+# Optional: upload data/dicom only if you have the restricted chest X-ray demo files locally
+# python scripts/upload_dicom.py data/dicom --password "<ORTHANC_PASSWORD>"
 python scripts/upload_dicom.py data/dicom_ct --password "<ORTHANC_PASSWORD>"   # 2 CT volumes (slow on CPU)
 python scripts/smoke_test.py                 # end-to-end check against the running stack
 ```
@@ -97,8 +109,8 @@ Stored in `docs/screenshots/`: worklist, chest X-ray overlay, CT mask overlay, a
 audit verify (tamper detected), Orthanc studies.
 
 ## Submission checklist
-- [ ] Code + `dvc.yaml`/`params.yaml` + DVC config (`.dvc/`, `*.dvc`) and the `dvc-remote/` folder
-- [ ] Weights (`models/*.pt`, also in the DVC remote)
+- [ ] Code + `dvc.yaml`/`params.yaml` + DVC config (`.dvc/`, `*.dvc`)
+- [ ] Public CT demo data and model weights downloaded through the documented DVC HTTP remote
 - [ ] `docs/` (model card, limitations, threat model, DICOM notes), `reports/eval/`, `docs/audit_schema.txt`, `docs/audit_sample.csv`
 - [ ] Screenshots and a short demo video
 - [ ] `docker compose up` verified from a clean copy; `ORTHANC_TAG`/image versions pinned
